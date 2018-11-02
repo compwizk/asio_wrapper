@@ -4,3 +4,16 @@ This project takes a specific release version of ASIO standalone and installs it
 
 It supports using the base machines installed headers and installs a library that can be found by CMake. If no package-manager (apt, etc) installed version exists, it will pull a specific tagged version (change the `CMakeLists.txt`) and install the headers and created library.
 
+## Docker
+
+```bash
+docker build -t asio:boost -f boostasio.Dockerfile .
+docker build -t asio:clean -f clean.Dockerfile .
+docker build -t asio:sysasio -f sysasio.Dockerfile .
+```
+
+
+## Boost - Asio linking
+https://www.boost.org/doc/libs/1_64_0/doc/html/boost_asio/history.html
+
+ONLY FOR LINUX
