@@ -8,8 +8,8 @@ It supports using the base machines installed headers and installs a library tha
 
 ```bash
 docker build -t asio:boost -f boostasio.Dockerfile .
-docker build -t asio:clean -f clean.Dockerfile .
-docker build -t asio:sysasio -f sysasio.Dockerfile .
+docker build -t asio:src -f src.Dockerfile .
+docker build -t asio:libasio -f libasio.Dockerfile .
 ```
 
 
