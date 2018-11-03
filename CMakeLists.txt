@@ -14,7 +14,7 @@ set(Yellow      "${Esc}[33m")
 
 
 
-# Check if libasio-dev was installed
+# Check if libasio-dev or asio-src was installed
 find_path(ASIO_INCLUDE_PATH asio.hpp HINTS 
     "/usr/include"
     "/usr/local/include"
@@ -23,21 +23,25 @@ find_path(ASIO_INCLUDE_PATH asio.hpp HINTS
 if(ASIO_INCLUDE_PATH)
     message(STATUS "${Yellow}Found existing ASIO install${Reset}")
     set(LIBASIO_INSTALL TRUE)
+else(ASIO_INCLUDE_PATH)
+    message(STATUS "${Green}No existing ASIO install found${Reset}")
 endif(ASIO_INCLUDE_PATH)
 
 # Check if libboost was installed and no libasio-dev
-find_package(Boost REQUIRED system QUIET)
-if(Boost_FOUND AND NOT ASIO_INCLUDE_PATH)
-    message(STATUS "${Yellow}Found existing Boost::ASIO install.${Reset}")
-    message(STATUS "${Yellow}>> You can use cmake find_package(Boost) to access asio.${Reset}")
-endif(Boost_FOUND)
+if(NOT LIBASIO_INSTALL)
+    find_package(Boost COMPONENTS system QUIET)
+    if(Boost_FOUND)
+        message(STATUS "${Yellow}Found existing Boost::ASIO install${Reset}")
+        message(STATUS "${Yellow}>> You can use cmake find_package(Boost) to access asio.${Reset}")
+    else(Boost_FOUND)
+        message(STATUS "${Green}No existing Boost::ASIO install found${Reset}")
+    endif(Boost_FOUND)
+endif(NOT LIBASIO_INSTALL)
 
 # If no libboost or libasio-dev, default to src install
 if(NOT Boost_FOUND AND NOT LIBASIO_INSTALL)
-    message(STATUS "${Green}No existing ASIO installs found${Reset}")
     set(SRC_INSTALL TRUE)
 endif(NOT Boost_FOUND AND NOT LIBASIO_INSTALL)
-
 
 
 if(NOT Boost_FOUND)
@@ -45,61 +49,33 @@ if(NOT Boost_FOUND)
     find_package(Threads REQUIRED)
     # Create and setup the interface library for asio
     add_library(${PROJECT_NAME} INTERFACE)
+    # Setup package install
+    set(INCLUDE_DEST "include")
+    set(LIB_DEST "lib")
+    set(EXPORT_DEST "lib/${PROJECT_NAME}")
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        INTERFACE_COMPILE_OPTIONS "-std=c++11"
+        EXPORT_NAME ${PROJECT_NAME}
+    )
+    target_include_directories(${PROJECT_NAME} INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${ASIO_INCLUDE_PATH}>
+        $<INSTALL_INTERFACE:${INCLUDE_DEST}>
+    )
+    target_link_libraries(${PROJECT_NAME}
+        INTERFACE ${CMAKE_THREAD_LIBS_INIT}
+    )
+    target_compile_definitions(${PROJECT_NAME}
+        INTERFACE ASIO_STANDALONE
+        INTERFACE ASIO_HAS_STD_CHRONO
+    )
 endif(NOT Boost_FOUND)
 
 
-
 if(LIBASIO_INSTALL)
-    # set(ASIO_INCLUDE_PATH "asio-src/asio/include/")
-
-    # add_dependencies(${PROJECT_NAME} asio-src)
-    # set_target_properties(${PROJECT_NAME} PROPERTIES
-    #     INTERFACE_COMPILE_OPTIONS "-std=c++11"
-    # )
-    # target_include_directories(${PROJECT_NAME}
-    #     INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${ASIO_INCLUDE_PATH}
-    # )
-    # target_link_libraries(${PROJECT_NAME}
-    #     INTERFACE ${CMAKE_THREAD_LIBS_INIT}
-    # )
-    # target_compile_definitions(${PROJECT_NAME}
-    #     INTERFACE ASIO_STANDALONE
-    #     INTERFACE ASIO_HAS_STD_CHRONO
-    # )
-
-    # # Setup package install
-    # set(INCLUDE_DEST "include")
-    # set(LIB_DEST "lib")
-    # set(EXPORT_DEST "lib/${PROJECT_NAME}")
-
-    # add_library(${PROJECT_NAME}_EXPORT INTERFACE)
-    # set_target_properties(${PROJECT_NAME}_EXPORT PROPERTIES
-    #     INTERFACE_COMPILE_OPTIONS "-std=c++11"
-    #     EXPORT_NAME ${PROJECT_NAME}
-    # )
-    # target_include_directories(${PROJECT_NAME}_EXPORT INTERFACE
-    #     ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DEST}
-    # )
-
-    # # Install asio header files
-    # install(
-    #     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${ASIO_INCLUDE_PATH}
-    #     DESTINATION ${INCLUDE_DEST}
-    #     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
-    # )
-
-    # install(TARGETS ${PROJECT_NAME}_EXPORT EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
-    # install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
-    # install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
-    # install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink \
-    #     ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DEST}/asio \
-    #     /usr/include/asio)"
-    # )
-    # install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink \
-    #     ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DEST}/asio.hpp \
-    #     /usr/include/asio.hpp)"
-    # )
-
+    install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
+    install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
+    install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
 endif(LIBASIO_INSTALL)
 
 
@@ -124,45 +100,18 @@ if(SRC_INSTALL)
         BUILD_COMMAND ""
         INSTALL_COMMAND ""
     )
+
     set(ASIO_INCLUDE_PATH "asio-src/asio/include/")
-
     add_dependencies(${PROJECT_NAME} asio-src)
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        INTERFACE_COMPILE_OPTIONS "-std=c++11"
-    )
-    target_include_directories(${PROJECT_NAME}
-        INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/${ASIO_INCLUDE_PATH}
-    )
-    target_link_libraries(${PROJECT_NAME}
-        INTERFACE ${CMAKE_THREAD_LIBS_INIT}
-    )
-    target_compile_definitions(${PROJECT_NAME}
-        INTERFACE ASIO_STANDALONE
-        INTERFACE ASIO_HAS_STD_CHRONO
-    )
-
-    # Setup package install
-    set(INCLUDE_DEST "include")
-    set(LIB_DEST "lib")
-    set(EXPORT_DEST "lib/${PROJECT_NAME}")
-
-    add_library(${PROJECT_NAME}_EXPORT INTERFACE)
-    set_target_properties(${PROJECT_NAME}_EXPORT PROPERTIES
-        INTERFACE_COMPILE_OPTIONS "-std=c++11"
-        EXPORT_NAME ${PROJECT_NAME}
-    )
-    target_include_directories(${PROJECT_NAME}_EXPORT INTERFACE
-        ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DEST}
-    )
 
     # Install asio header files
     install(
         DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${ASIO_INCLUDE_PATH}
         DESTINATION ${INCLUDE_DEST}
-        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+        FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.ipp"
     )
 
-    install(TARGETS ${PROJECT_NAME}_EXPORT EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
+    install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
     install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
     install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
     install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink \
