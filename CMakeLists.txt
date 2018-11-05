@@ -8,11 +8,8 @@ endif()
 # Setup color output
 string(ASCII 27 Esc)
 set(Reset       "${Esc}[m")
-set(Red         "${Esc}[31m")
 set(Green       "${Esc}[32m")
 set(Yellow      "${Esc}[33m")
-
-
 
 # Check if libasio-dev or asio-src was installed
 find_path(ASIO_INCLUDE_PATH asio.hpp HINTS 
@@ -72,14 +69,6 @@ if(NOT Boost_FOUND)
 endif(NOT Boost_FOUND)
 
 
-if(LIBASIO_INSTALL)
-    install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
-    install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
-    install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
-endif(LIBASIO_INSTALL)
-
-
-
 if(SRC_INSTALL)
     include(ExternalProject)
     if(NOT ASIO_TAG)
@@ -111,9 +100,7 @@ if(SRC_INSTALL)
         FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.ipp"
     )
 
-    install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
-    install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
-    install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
+    # Symlink /usr/local install to /usr
     install(CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink \
         ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DEST}/asio \
         /usr/include/asio)"
@@ -124,3 +111,10 @@ if(SRC_INSTALL)
     )
 
 endif(SRC_INSTALL)
+
+if(LIBASIO_INSTALL OR SRC_INSTALL)
+    # Install target and asio cmake files for find_package
+    install(TARGETS ${PROJECT_NAME} EXPORT ${PROJECT_NAME} DESTINATION ${LIB_DEST})
+    install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
+    install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
+endif(LIBASIO_INSTALL OR SRC_INSTALL)
