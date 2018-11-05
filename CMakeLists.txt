@@ -5,6 +5,9 @@ if(WIN32)
     message(FATAL_ERROR "Unsupported host operating system detected!")
 endif()
 
+set(INSTALL_WRAPPER_HEADER ON CACHE BOOL 
+    "Install the wrapper header file to support unified boost and asio-src interface.")
+
 # Setup color output
 string(ASCII 27 Esc)
 set(Reset       "${Esc}[m")
@@ -21,7 +24,7 @@ if(ASIO_INCLUDE_PATH)
     message(STATUS "${Yellow}Found existing ASIO install${Reset}")
     set(LIBASIO_INSTALL TRUE)
 else(ASIO_INCLUDE_PATH)
-    message(STATUS "${Green}No existing ASIO install found${Reset}")
+    message(STATUS "${Green}No existing ASIO-src install found${Reset}")
 endif(ASIO_INCLUDE_PATH)
 
 # Check if libboost was installed and no libasio-dev
@@ -118,3 +121,14 @@ if(LIBASIO_INSTALL OR SRC_INSTALL)
     install(FILES ${PROJECT_NAME}-config.cmake DESTINATION ${EXPORT_DEST})
     install(EXPORT ${PROJECT_NAME} DESTINATION ${EXPORT_DEST})
 endif(LIBASIO_INSTALL OR SRC_INSTALL)
+
+if(INSTALL_WRAPPER_HEADER)
+    if(NOT INCLUDE_DEST)
+        set(INCLUDE_DEST "include")
+    endif()
+    # Install asio wrapper header file
+    install(
+        FILES "${CMAKE_SOURCE_DIR}/asio_wrapper.hpp"
+        DESTINATION ${INCLUDE_DEST}
+    )
+endif()
